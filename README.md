@@ -12,7 +12,7 @@ redis的源码太赞了！设计的可重用性非常高，而且几乎无外部
 ### 操作环境
 宿主是Mac环境，但用惯了source insight，所以源码还是在虚拟机xp中编(chao)辑(xi)，然后用copy命令全部复制到宿主机目录中，
 编译&调试也是在Mac环境下，所以使用了kqueue作为IO多路复用。makefile是网上抓的一个通用版本。版本管理使用github for Mac，
-直接sync到这里。
+commit到本地后，再直接sync到这里，非常好用。
 
 ...
 
