@@ -19,6 +19,9 @@ $(EXE): $(OBJ)
 clean:
 	rm $(EXE) $(OBJ) .depend Areactor* -f
 
+utf8:
+	iconv -f gb2312 -t utf-8 *.c *.h
+
 run:
 	python ./server/server_A.py &
 	./$(EXE)
