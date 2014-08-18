@@ -18,3 +18,7 @@ $(EXE): $(OBJ)
 
 clean:
 	rm $(EXE) $(OBJ) .depend Areactor* -f
+
+run:
+	python ./server/server_A.py &
+	./$(EXE)

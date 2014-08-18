@@ -21,7 +21,20 @@ void command_quit_client(struct client *c)
 
 void command_sa(struct client *c)
 {
-	addReply(c, "SA operate return OK");
+	int sa_fd;
+	char err_buf[100];
+	
+	sa_fd = anetTcpConnect(err_buf, "192.168.1.109", 5566);
+	if (sa_fd == ANET_ERR) {
+		printf("%s\n", err_buf);
+		return;
+	}
+
+	anetWrite(sa_fd, c->input_buf, strlen(c->input_buf)+1);
+	anetRead(sa_fd, c->buf, IOBUF_LEN);
+	close(sa_fd);
+	
+	addReply(c, NULL);
 }
 
 void command_sb(struct client *c)

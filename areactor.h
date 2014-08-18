@@ -7,7 +7,7 @@
 #include "anet.h"
 #include "command.h"
 
-#define DEFAULT_PORT	55555
+#define DEFAULT_PORT	5555
 
 struct server{
 	int port;		// socket port 

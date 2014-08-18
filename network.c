@@ -136,7 +136,7 @@ void process_input(struct client *c)
 
 	//it should be analysis here. i not do it ... ugly..
 	for (i=0; i<get_commands_number(); i++) {
-		printf ("%s & %s\n", get_command_from_index(i)->name, c->input_buf);
+		//printf ("%s & %s\n", get_command_from_index(i)->name, c->input_buf);
 		if (memcmp(get_command_from_index(i)->name, c->input_buf, strlen(get_command_from_index(i)->name)) == 0) {
 			(get_command_from_index(i)->pro)(c);
 		}
