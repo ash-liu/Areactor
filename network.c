@@ -5,8 +5,14 @@
 #include "ae.h"
 #include "anet.h"
 #include "areactor.h"
+#include "command.h"
+#include "client.h"
 
 
+//----------------------------
+// handles 
+
+// handle for socket connect
 void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) 
 {
     int cport, cfd;
@@ -29,6 +35,7 @@ void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask)
 }
 
 
+// handle for socket firstly readable.
 void acceptCommonHandler(int fd, int flags) 
 {
     struct client *c;
@@ -40,7 +47,47 @@ void acceptCommonHandler(int fd, int flags)
     }
 }
 
+// handle for socket readable
+void readQueryFromClientHandle(aeEventLoop *el, int fd, void *privdata, int mask) 
+{
+    struct client *c = (struct client *)privdata;
+    int nread, readlen;
+	char *read_buf = c->input_buf;
+	int i;
+	
+    NOTUSED(el);
+    NOTUSED(mask);
+    readlen = IOBUF_LEN;
 
+ 	for (i=0; i<IOBUF_LEN; i++) {
+		read_buf[i] = 0;
+	}
+	
+    nread = read(fd, read_buf, readlen);
+
+    // 处理读错误值和 EOF （客户端已关闭）
+    if (nread == -1) {
+        if (errno == EAGAIN) {
+            nread = 0;
+        } else {
+            printf("Reading from client: %s\n",strerror(errno));
+            freeClient(c);
+            return;
+        }
+    } else if (nread == 0) {
+        printf("Client closed connection\n");
+        freeClient(c);
+        return;
+    }
+
+	//analysis and process cmd
+    process_input(c);    
+}
+
+
+//-------------------------
+// functions for reply to client
+//-
 void sendReplyToClient(aeEventLoop *el, int fd, void *privdata, int mask) 
 {
 	int nwritten = 0;
@@ -65,59 +112,34 @@ void sendReplyToClient(aeEventLoop *el, int fd, void *privdata, int mask)
 	aeDeleteFileEvent(g_server.el, c->fd, AE_WRITABLE);
 }
 
-void addReply(struct client *c, char *obj) 
+// str = NULL  => reply string is ready in c->buf, otherwise copy to c->buf 
+void addReply(struct client *c, char *str) 
 {
-	memcpy(c->buf, obj, strlen(obj)+1);
+	if (str != NULL) {
+		memcpy(c->buf, str, strlen(str)+1);
+	}
+	
 	if (aeCreateFileEvent(g_server.el, c->fd, AE_WRITABLE, sendReplyToClient, c) == AE_ERR){
 		printf ("create AE_WRITABLE error\n");
 	}
 }
 
 
-
-void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask) 
+//---------------------------------
+// main process for socket date
+//
+void process_input(struct client *c)
 {
-    struct client *c = (struct client *)privdata;
-    int nread, readlen;
-	char read_buf[IOBUF_LEN];
-	char ret_buf[IOBUF_LEN];
+	CommandProc *pro;
+	char *name;
 	int i;
-	
-    NOTUSED(el);
-    NOTUSED(mask);
-    readlen = IOBUF_LEN;
 
- 	for (i=0; i<IOBUF_LEN; i++) {
-		read_buf[i] = 0;
-		ret_buf[i] = 0;
+	//it should be analysis here. i not do it ... ugly..
+	for (i=0; i<get_commands_number(); i++) {
+		printf ("%s & %s\n", get_command_from_index(i)->name, c->input_buf);
+		if (memcmp(get_command_from_index(i)->name, c->input_buf, strlen(get_command_from_index(i)->name)) == 0) {
+			(get_command_from_index(i)->pro)(c);
+		}
 	}
-	
-    nread = read(fd, read_buf, readlen);
-
-    // 处理读错误值和 EOF （客户端已关闭）
-    if (nread == -1) {
-        if (errno == EAGAIN) {
-            nread = 0;
-        } else {
-            printf("Reading from client: %s\n",strerror(errno));
-            freeClient(c);
-            return;
-        }
-    } else if (nread == 0) {
-        printf("Client closed connection\n");
-        freeClient(c);
-        return;
-    }
-
-    //processInputBuffer(c);
-    sprintf(ret_buf, "OK");
-	printf("%s\n",read_buf);
-	if (strcmp(read_buf, "NUM") == 0){
-		sprintf(ret_buf, "%d", listLength(g_server.clients));
-	}
-    
-	addReply(c, ret_buf);
 }
-
-
 

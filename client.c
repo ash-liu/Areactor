@@ -15,7 +15,7 @@ struct client *create_client(int fd)
 
 	anetNonBlock(NULL,fd);
 	anetTcpNoDelay(NULL,fd);
-	if (aeCreateFileEvent(g_server.el, fd, AE_READABLE, readQueryFromClient, c) == AE_ERR){
+	if (aeCreateFileEvent(g_server.el, fd, AE_READABLE, readQueryFromClientHandle, c) == AE_ERR){
 		close(fd);
 		free(c);
 		return NULL;
